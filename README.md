@@ -117,9 +117,21 @@ and does nothing.
 1. **The module directory must be named `mod-ale`.** `modules/CMakeLists.txt`
    matches on that name and only then links `lualib`. Cloned as `mod-eluna`,
    the build dies with `'lua.h' file not found`.
-2. **The stock `acore/ac-wotlk-worldserver:master` image has no Lua engine at
-   all.** Checked, not assumed: the string `ALE.Enabled` does not appear in
-   that binary. `:ale` here is built from source with the module present.
+2. ~~**The stock `acore/ac-wotlk-worldserver:master` image has no Lua engine at
+   all.**~~ **NO LONGER TRUE — re-measured 2026-09-04.** `ALE.Enabled`,
+   `ALE.ScriptPath`, `mod-ale`, `LuaEngine` and `Searching scripts from` are all
+   present in the `:master` binary as well as `:ale`. The original measurement
+   was right when it was taken and the image has since changed; upstream now
+   ships the engine. What this means for installation is large: **the image
+   override is no longer needed**, so the till stops requiring a non-default
+   image and becomes a script drop plus configuration. The four settings in
+   point 3 and 4 still apply, because the engine ships *off* and unable to say
+   so.
+
+   `Eluna` appears in neither binary. This is **ALE**, an AzerothCore-specific
+   fork, and its own documentation says standard Eluna scripts are not
+   compatible — so calling this project "an Eluna script" is wrong even though
+   it is the family the API comes from.
 3. **`ALE.Enabled` defaults to `false`** (`ALEConfig.cpp`), and the image ships
    only `mod_ale.conf.dist` — the entrypoint copies `.dist` files for server
    configs, not module ones. So the engine is off *and* its logger has no

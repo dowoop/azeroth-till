@@ -15,13 +15,27 @@
 #
 # WHAT IT CHANGES, AND WHY EACH ONE
 #
-#   image:       the stock `acore/ac-wotlk-worldserver:master` has NO Lua
-#                engine -- checked, not assumed: the string `ALE.Enabled` does
-#                not appear in that binary. The `:ale` images are built from
-#                source with `modules/mod-ale` present. The directory name is
-#                load-bearing: AzerothCore's `modules/CMakeLists.txt` matches
-#                on `mod-ale` and only then links `lualib`, so the same module
-#                cloned as `mod-eluna` fails to find `lua.h`.
+#   image:       PROBABLY NO LONGER NEEDED, and this comment is kept rather than
+#                deleted because the reason it existed was measured and then
+#                stopped being true. It said the stock
+#                `acore/ac-wotlk-worldserver:master` has NO Lua engine, on the
+#                evidence that `ALE.Enabled` did not appear in that binary.
+#                Re-measured 2026-09-04 against the image on this machine:
+#                `ALE.Enabled`, `ALE.ScriptPath`, `mod-ale`, `LuaEngine` and
+#                `Searching scripts from` are ALL present in `:master`. Upstream
+#                ships the engine now.
+#
+#                The override is left in place until the till has been driven
+#                against `:master` end to end -- the strings being present is
+#                evidence the module is compiled in, not evidence the till
+#                works there. Dropping it is the single biggest simplification
+#                available to this project's install, so it is worth proving
+#                rather than assuming.
+#
+#                Still true and still load-bearing: the directory name.
+#                AzerothCore's `modules/CMakeLists.txt` matches on `mod-ale` and
+#                only then links `lualib`, so the same module cloned as
+#                `mod-eluna` fails to find `lua.h`.
 #
 #   extra_hosts: the world server is in a container and the till runs on the
 #                host. `host-gateway` is the documented way across on Linux,
