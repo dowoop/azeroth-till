@@ -149,7 +149,11 @@ def load_config(path):
             " shared-account mode, where two orders open at once cannot be told"
             " apart -- which is exactly what a till full of players is."
         )
-    if config["micro_xtr_per_gold"] <= 0:
+    if (
+        not isinstance(config["micro_xtr_per_gold"], int)
+        or isinstance(config["micro_xtr_per_gold"], bool)
+        or config["micro_xtr_per_gold"] <= 0
+    ):
         raise ConfigError("`micro_xtr_per_gold` must be a positive whole number")
     if config["min_gold_per_order"] < 1:
         raise ConfigError("`min_gold_per_order` must be at least 1")
@@ -346,6 +350,13 @@ class Ledger:
         with self._lock:
             try:
                 with self._db:
+                    cursor = self._db.execute(
+                        "UPDATE orders SET state = ?, credited_native = ?, settled_at = ?"
+                        " WHERE ref = ? AND state = ?",
+                        (SETTLED, credited_native, now, ref, OPEN),
+                    )
+                    if cursor.rowcount != 1:
+                        return False
                     for transaction_id in transaction_ids:
                         self._db.execute(
                             "INSERT INTO claims (rail_key, recipient, sale_ref, transaction_id,"
@@ -353,11 +364,6 @@ class Ledger:
                             " WHERE ref = ?",
                             (transaction_id, now, ref),
                         )
-                    self._db.execute(
-                        "UPDATE orders SET state = ?, credited_native = ?, settled_at = ?"
-                        " WHERE ref = ? AND state = ?",
-                        (SETTLED, credited_native, now, ref, OPEN),
-                    )
             except sqlite3.IntegrityError:
                 return False
             return True
@@ -728,12 +734,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
-        if parsed.path == "/health":
-            return self._send(200, {"ok": True, "orders": self.till.ledger.counts()})
         if not self._authorised():
             if self._wants_text():
                 return self._send_text(401, ["ERR bad or missing X-Till-Token"])
             return self._send(401, {"error": "bad or missing X-Till-Token"})
+        if parsed.path == "/health":
+            return self._send(200, {"ok": True, "orders": self.till.ledger.counts()})
         query = urllib.parse.parse_qs(parsed.query)
         if parsed.path == "/stuck":
             seconds = int(query.get("seconds", ["300"])[0])
@@ -764,7 +770,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             try:
                 order = self.till.create(
                     int(body["account_id"]), int(body["char_guid"]),
-                    str(body["char_name"]), int(body["gold"]),
+                    str(body["char_name"]), body["gold"],
                 )
             except (KeyError, TypeError) as missing:
                 return self._refuse(400, f"the order is missing {missing}")
