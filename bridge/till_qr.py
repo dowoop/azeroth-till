@@ -3,7 +3,7 @@ till_qr.py — the payment request, small enough to draw in a 3.3.5a chat frame.
 
 ## What this is for
 
-`qr_wire.py` in `Point of Sale` solves a different problem: it carries an
+There is a related format that solves a DIFFERENT problem: carrying an
 unsigned TRANSACTION to a co-signer and back. This module carries a payment
 REQUEST — component, amount, reference — to somebody who has not composed
 anything yet. Three fields, no cryptography, no signature, no key.

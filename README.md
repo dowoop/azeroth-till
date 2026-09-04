@@ -218,7 +218,7 @@ the base AzerothCore project.
 ```
 bridge/     till.py        the service: five calls, ledger, watcher, HTTP
             till_qr.py     the OTLPAY1 payload, the symbol, the addon wire
-            qrcodegen.py   vendored from `Point of Sale/` (Nayuki, MIT)
+            qrcodegen.py   vendored unchanged (Project Nayuki, MIT)
 server/     lua_scripts/   the ALE script the world server runs
             conf/          mod_ale.conf, because the image ships only .dist
             run.sh         composes over the existing acore-docker project
@@ -228,8 +228,7 @@ harness/    h_wire.py      does the addon draw what the till encoded?
 
 ## The Ootle side
 
-Deployed 2026-09-02 at epoch 10821, recorded in
-`Point of Sale/ootle-testnet/ADDRESSES.md`:
+Deployed 2026-09-02 at epoch 10821, and recorded at deployment:
 
 | | |
 |---|---|
