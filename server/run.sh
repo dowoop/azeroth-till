@@ -17,7 +17,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Where the AzerothCore project lives. Overridable, because this path is the
 # one thing here that is true only on this workstation.
-ACORE="${ACORE_DIR:-~/Games/World of Warcraft/Server/acore-docker}"
+ACORE="${ACORE_DIR:-$HOME/Games/World of Warcraft/Server/acore-docker}"
 
 if [ ! -f "$ACORE/docker-compose.yml" ]; then
   echo "no AzerothCore project at: $ACORE" >&2

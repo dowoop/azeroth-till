@@ -39,7 +39,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERBOSE=0
 [ "${1:-}" = "--verbose" ] && VERBOSE=1
 
-ACORE="${ACORE_DIR:-~/Games/World of Warcraft/Server/acore-docker}"
+ACORE="${ACORE_DIR:-$HOME/Games/World of Warcraft/Server/acore-docker}"
 CONTAINER="${AZT_CONTAINER:-acore-docker-ac-worldserver-1}"
 CONFIG="$HERE/bridge/till.json"
 LUA_CONFIG="$HERE/server/lua_scripts/azeroth_till_config.lua"
