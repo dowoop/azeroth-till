@@ -15,27 +15,28 @@
 #
 # WHAT IT CHANGES, AND WHY EACH ONE
 #
-#   image:       PROBABLY NO LONGER NEEDED, and this comment is kept rather than
-#                deleted because the reason it existed was measured and then
-#                stopped being true. It said the stock
-#                `acore/ac-wotlk-worldserver:master` has NO Lua engine, on the
-#                evidence that `ALE.Enabled` did not appear in that binary.
-#                Re-measured 2026-09-04 against the image on this machine:
-#                `ALE.Enabled`, `ALE.ScriptPath`, `mod-ale`, `LuaEngine` and
-#                `Searching scripts from` are ALL present in `:master`. Upstream
-#                ships the engine now.
+#   image:       NOT OVERRIDDEN ANY MORE, and this is the measurement that
+#                removed it. This file used to pin `:ale` images because the
+#                stock `:master` worldserver had no Lua engine -- checked at the
+#                time, and no longer true. On 2026-09-04 the stock
+#                `acore/ac-wotlk-worldserver:master` was brought up under exactly
+#                the settings below and the till's own script announced itself:
 #
-#                The override is left in place until the till has been driven
-#                against `:master` end to end -- the strings being present is
-#                evidence the module is compiled in, not evidence the till
-#                works there. Dropping it is the single biggest simplification
-#                available to this project's install, so it is worth proving
-#                rather than assuming.
+#                    Using modules configuration: > mod_ale.conf
+#                    Config: Found config value 'ALE.Enabled' from AC_ALE_ENABLED
+#                    [azeroth_till] loaded; trigger is #till
+#                    WORLD: World Initialized In 0 Minutes 5 Seconds
 #
-#                Still true and still load-bearing: the directory name.
-#                AzerothCore's `modules/CMakeLists.txt` matches on `mod-ale` and
-#                only then links `lualib`, so the same module cloned as
-#                `mod-eluna` fails to find `lua.h`.
+#                The characters table and the mail row from the real 2026-09-02
+#                delivery were both intact afterwards. So the till now runs on
+#                whatever image the base project uses, and installing it no
+#                longer means swapping the world server -- which was the single
+#                largest obstacle to dropping this into somebody else's stack.
+#
+#                Still load-bearing if you ever build ALE yourself: the directory
+#                name. AzerothCore's `modules/CMakeLists.txt` matches on
+#                `mod-ale` and only then links `lualib`, so the same module
+#                cloned as `mod-eluna` fails to find `lua.h`.
 #
 #   extra_hosts: the world server is in a container and the till runs on the
 #                host. `host-gateway` is the documented way across on Linux,
@@ -58,7 +59,6 @@
 # project defines them.
 services:
   ac-worldserver:
-    image: acore/ac-wotlk-worldserver:ale
     environment:
       # ALE.Enabled DEFAULTS TO FALSE. Checked in `ALEConfig.cpp`, not guessed:
       # `SetConfigValue<bool>(ENABLED, "ALE.Enabled", "false")`. The module's
@@ -101,6 +101,3 @@ services:
       # `ALE.Enabled = true`; the appenders come with it, which is what makes
       # a Lua error in a script visible instead of silent.
       - ${AZEROTH_TILL_CONF:?run.sh sets this}/mod_ale.conf:/azerothcore/env/dist/etc/modules/mod_ale.conf:ro
-
-  ac-authserver:
-    image: acore/ac-wotlk-authserver:ale

@@ -169,7 +169,8 @@ and does nothing.
    matches on that name and only then links `lualib`. Cloned as `mod-eluna`,
    the build dies with `'lua.h' file not found`.
 2. ~~**The stock `acore/ac-wotlk-worldserver:master` image has no Lua engine at
-   all.**~~ **NO LONGER TRUE — re-measured 2026-09-04.** `ALE.Enabled`,
+   all.**~~ **NO LONGER TRUE, and the image override is gone because of it.**
+   Re-measured 2026-09-04, then driven: `ALE.Enabled`,
    `ALE.ScriptPath`, `mod-ale`, `LuaEngine` and `Searching scripts from` are all
    present in the `:master` binary as well as `:ale`. The original measurement
    was right when it was taken and the image has since changed; upstream now
@@ -178,6 +179,23 @@ and does nothing.
    image and becomes a script drop plus configuration. The four settings in
    point 3 and 4 still apply, because the engine ships *off* and unable to say
    so.
+
+   The stock image was brought up under the till's own ALE settings and the
+   script announced itself:
+
+   ```
+   Using modules configuration: > mod_ale.conf
+   Config: Found config value 'ALE.Enabled' from environment variable 'AC_ALE_ENABLED'
+   [azeroth_till] loaded; trigger is #till
+   WORLD: World Initialized In 0 Minutes 5 Seconds
+   ```
+
+   The characters table and the mail row from the real 2026-09-02 delivery were
+   both intact afterwards. **So `docker-compose.azeroth-till.yml` no longer
+   overrides the image**, and installing the till no longer means swapping the
+   world server — which was the single largest obstacle to dropping this into
+   somebody else's stack. `./server/run.sh up` was then run through its normal
+   path on the base project's own `:master` images and the script loaded again.
 
    `Eluna` appears in neither binary. This is **ALE**, an AzerothCore-specific
    fork, and its own documentation says standard Eluna scripts are not
