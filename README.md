@@ -240,3 +240,7 @@ Deployed 2026-09-02 at epoch 10821, recorded in
 so two players' orders can never be confused for one another. Without a payment
 component this rail falls back to a shared account where they can be — the
 till refuses to start without one, for that reason.
+
+## Licence
+
+MIT — the full text is in [`LICENSE`](LICENSE).
