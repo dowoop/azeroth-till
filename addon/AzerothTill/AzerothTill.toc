@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: Azeroth Till
+## Notes: Draws the payment code the server sends, so it can be scanned off the screen.
+## Author: azeroth-till
+## Version: 1.0
+## SavedVariables: AzerothTillDB
+
+AzerothTill.lua

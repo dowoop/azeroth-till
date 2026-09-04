@@ -1,0 +1,14 @@
+{
+  "endpoint": "https://ootle-indexer-a.tari.com",
+  "network": "esmeralda",
+  "recipient": "component_eebc733b1e68900fd9ed53cbf90d13f2ebed881afee5cb8ff6a4b56ee5812856",
+  "payment_component": "component_a2208e00baa392cd1a6d6ef8336e083fac01499ec19dacde0f245114f0f37aab",
+  "token": "CHANGE-ME",
+  "bind": "0.0.0.0",
+  "port": 8099,
+  "micro_xtr_per_gold": 2000,
+  "max_gold_per_order": 5000,
+  "window_seconds": 900,
+  "poll_seconds": 20,
+  "database": "till.sqlite3"
+}

@@ -1,0 +1,92 @@
+# The till's overlay on an existing acore-docker stack.
+#
+# WHY THIS IS A SEPARATE FILE AND NOT AN EDIT
+#
+# The AzerothCore project on this machine is somebody's working server, with
+# its own `docker-compose.override.yml`, its own rates, its own database volume
+# and its own characters. Editing it to add a till would mean the till and the
+# server could no longer be turned off independently, and removing the till
+# later would mean remembering what was changed.
+#
+# So this is a third overlay, applied explicitly:
+#
+#     ./run.sh up          # bring the stack up with the till's server in it
+#     ./run.sh down        # stop it; the base project is untouched either way
+#
+# WHAT IT CHANGES, AND WHY EACH ONE
+#
+#   image:       the stock `acore/ac-wotlk-worldserver:master` has NO Lua
+#                engine -- checked, not assumed: the string `ALE.Enabled` does
+#                not appear in that binary. The `:ale` images are built from
+#                source with `modules/mod-ale` present. The directory name is
+#                load-bearing: AzerothCore's `modules/CMakeLists.txt` matches
+#                on `mod-ale` and only then links `lualib`, so the same module
+#                cloned as `mod-eluna` fails to find `lua.h`.
+#
+#   extra_hosts: the world server is in a container and the till runs on the
+#                host. `host-gateway` is the documented way across on Linux,
+#                and it is the ONLY thing the container needs from the host.
+#
+#   volumes:     the till's Lua, mounted read-only. The world server has no
+#                business writing to it, and a mount that could be written is a
+#                mount a compromised container could use to change what the
+#                server executes on the next reload.
+#
+#                The path comes from an environment variable rather than being
+#                written relative here: compose resolves relative paths against
+#                the FIRST compose file's directory, which is the base
+#                project's, not this one's. A `../..` that looked right would
+#                mount whatever happens to sit two levels above someone else's
+#                checkout. `run.sh` sets it absolutely and this file refuses
+#                to start without it.
+#
+# The database, client data, ports and rates all stay exactly as the base
+# project defines them.
+services:
+  ac-worldserver:
+    image: acore/ac-wotlk-worldserver:ale
+    environment:
+      # ALE.Enabled DEFAULTS TO FALSE. Checked in `ALEConfig.cpp`, not guessed:
+      # `SetConfigValue<bool>(ENABLED, "ALE.Enabled", "false")`. The module's
+      # own `mod_ale.conf.dist` says `true`, but that file is not installed in
+      # this image, so the compiled default is what applies -- a server with
+      # the engine built in, the scripts mounted, and nothing running. The
+      # first symptom is silence: no error, no banner, no script.
+      AC_ALE_ENABLED: "1"
+      # ABSOLUTE, AND THAT IS THE WHOLE FIX. `ALE.ScriptPath` defaults to the
+      # relative `lua_scripts`, and this container's working directory is
+      # `/azerothcore` -- so the engine searched `/azerothcore/lua_scripts`,
+      # which does not exist, found nothing, and said nothing. The scripts are
+      # installed next to the binary, two directories down.
+      AC_ALE_SCRIPT_PATH: "/azerothcore/env/dist/bin/lua_scripts"
+      # A Lua error without a traceback names a line in a file and nothing
+      # about how it was reached, and every call here arrives from an async
+      # HTTP callback.
+      AC_ALE_TRACE_BACK: "1"
+      # THE ENGINE HAS ITS OWN LOGGER AND WITHOUT THESE IT SPEAKS TO NOBODY.
+      # `ALE_LOG_INFO` writes to a logger named `ALE`, which `mod_ale.conf`
+      # defines and this image does not install -- so "Searching scripts from
+      # ..." , every Lua error and every `print` in a script go nowhere. A
+      # script that fails to load looks exactly like a script that loaded and
+      # did nothing, which is the state this stack was in until these lines
+      # existed.
+      AC_APPENDER_ALECONSOLE: "1,4,0"
+      AC_APPENDER_ALELOG: "2,5,0,ALE.log,w"
+      AC_LOGGER_ALE: "4,ALEConsole ALELog"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${AZEROTH_TILL_LUA:?run.sh sets this to the absolute path of server/lua_scripts}:/azerothcore/env/dist/bin/lua_scripts/azeroth-till:ro
+      # THE MODULE CONF, WHICH THE IMAGE SHIPS ONLY AS `.dist`. AzerothCore
+      # opens `mod_ale.conf` and the build installs `mod_ale.conf.dist`; the
+      # entrypoint copies the `.dist` files for the SERVER configs and not for
+      # module ones, so the server logs "Failed open file" and carries on with
+      # compiled defaults. Two of those defaults matter: `ALE.Enabled` is
+      # false, and the `ALE` logger has no appender -- so the engine is off AND
+      # unable to say so. This file is a copy of the image's own `.dist` with
+      # `ALE.Enabled = true`; the appenders come with it, which is what makes
+      # a Lua error in a script visible instead of silent.
+      - ${AZEROTH_TILL_CONF:?run.sh sets this}/mod_ale.conf:/azerothcore/env/dist/etc/modules/mod_ale.conf:ro
+
+  ac-authserver:
+    image: acore/ac-wotlk-authserver:ale

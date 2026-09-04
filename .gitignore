@@ -1,0 +1,6 @@
+.venv/
+till.json
+till.sqlite3
+__pycache__/
+harness/.work/
+server/lua_scripts/azeroth_till_config.lua

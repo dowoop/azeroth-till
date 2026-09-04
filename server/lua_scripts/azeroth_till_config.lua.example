@@ -1,0 +1,22 @@
+-- azeroth_till_config.lua — the world server's half of the till's settings.
+--
+-- Copy to `azeroth_till_config.lua` (which is NOT in version control) and set
+-- the token to the one in `bridge/till.json`. The two must match or every
+-- order comes back 401 and the player is told the till refused them.
+--
+-- `url` is how the CONTAINER reaches the till, not how you reach it. The world
+-- server runs in Docker and the till runs on the host, so `127.0.0.1` inside
+-- the container is the container itself. `host.docker.internal` is the way
+-- across, and the compose overlay is what defines it.
+
+AzerothTill_Config = {
+    url = "http://host.docker.internal:8099",
+    token = "PUT THE TOKEN FROM bridge/till.json HERE",
+    trigger = "#till",
+    poll_ms = 5000,
+    claim_limit = 5,
+    -- The character whose name appears as the mail's sender. 0 means the mail
+    -- arrives from nobody in particular, which is what a system delivery is.
+    sender_guid = 0,
+    mail_subject = "Azeroth Till",
+}
