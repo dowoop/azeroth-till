@@ -868,6 +868,19 @@ def main(argv=None):
     thread.start()
     server = http.server.ThreadingHTTPServer((config["bind"], config["port"]), Handler)
     print(f"[till] {config['bind']}:{config['port']} rail {till.rail.key}", flush=True)
+    # THE DEFAULT BIND IS THE WIDEST ONE, and it cannot be narrowed in the
+    # defaults because the right answer is machine-specific. The world server is
+    # in a container and reaches this process through `host.docker.internal`
+    # mapped to `host-gateway`, which on Linux is the host's address on the
+    # docker bridge -- so `127.0.0.1` would be invisible to the caller that
+    # matters. `install.sh` detects the bridge address and writes it here; this
+    # says so out loud when nobody has, because a token on this port authorises
+    # `/claim`, `/delivered` and `/release`, and those three together mark an
+    # order fulfilled without any gold being mailed.
+    if config["bind"] in ("0.0.0.0", "::"):
+        print("[till] WARNING: bound to every interface. Anyone who can reach"
+              f" this port and holds the token can mark orders delivered."
+              " `./install.sh` sets the docker bridge address instead.", flush=True)
     print(f"[till] component {config['payment_component']}", flush=True)
     print(f"[till] {config['micro_xtr_per_gold']:,} microTari per gold (a picked rate: no feed lists XTR)",
           flush=True)

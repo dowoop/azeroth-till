@@ -87,27 +87,78 @@ otherwise.
 hooks and selling gold on it breaks their rules. The *client* is theirs and is
 fine; the server must be yours.
 
-## Running it
+## Installing it
+
+Two commands, then two values only you can supply.
 
 ```bash
-# 1. the till (host)
-cd bridge
-cp till.example.json till.json     # set token, recipient, payment_component
-../.venv/bin/python till.py --config till.json --serve
-
-# 2. the world server (docker, on top of an existing acore-docker project)
-cd ../server
-cp lua_scripts/azeroth_till_config.lua.example lua_scripts/azeroth_till_config.lua
-#    ^ put the same token in it, or every order comes back 401
-./run.sh up
-./run.sh ale                        # what the Lua engine said
-
-# 3. the addon
-cp -r addon/AzerothTill "<client>/Interface/AddOns/"
+./install.sh                      # one generated token into both halves, mode 600
+./doctor.sh                       # which of the five silent failures you have
 ```
+
+`install.sh` exists to delete one specific failure. The token has to be
+byte-identical in `bridge/till.json` and in
+`server/lua_scripts/azeroth_till_config.lua`, and copying it by hand was the
+commonest way this install broke — quietly, because the world server reaches the
+till, the till answers 401, and the player is told the till refused them. One
+secret is generated, written to both places at mode 600, and never printed;
+`--rotate` changes both together, because changing one is the same failure by
+another route.
+
+It also **binds the docker bridge rather than every interface**. The till was
+binding `0.0.0.0`, on a service whose routes claim orders, mark them delivered
+and release them. `127.0.0.1` would be the reflex fix and would harden it into
+not working: the world server is in a container and reaches the host through
+`host.docker.internal` → `host-gateway`, which on Linux is the host's address on
+the docker bridge, not loopback.
+
+Then set the two things a script must not invent, in `bridge/till.json`:
+
+| key | what it is |
+|---|---|
+| `recipient` | the Ootle account the money lands in |
+| `payment_component` | the component that binds a payment to one order. **Without it the rail runs in shared-account mode and two open orders cannot be told apart** — `load_config` refuses to start without one, deliberately. |
+
+And run the two halves:
+
+```bash
+./server/run.sh up                                          # the world server
+cd bridge && ../.venv/bin/python till.py --config till.json --serve
+./install.sh --addon '<wow>/Interface/AddOns'                # optional: the QR
+```
+
+Without the addon a player still gets the payment instruction as text; the addon
+is what draws the QR on their screen.
 
 `python3 bridge/till.py --quote 120` prices an order and prints its symbol as
 text, with no network and no order opened.
+
+### When a player says nothing happened
+
+`./doctor.sh`. Every way this has broken looks identical from a player's seat and
+none of the causes raise an error: the engine disabled, the script path wrong,
+the logger unwired, the tokens disagreeing, or the till not running. It checks
+all five and names which one, plus the ledger, the file modes on both secrets and
+the bind posture. It opens no order and spends nothing.
+
+It is worth knowing that it was wrong twice before it was right, both times
+caught by running it against a world server known to work — it read a log tail
+and reported an engine "never" started on a container up 38 hours, and it looked
+for a start-up line this ALE build does not emit. It now checks for
+`[azeroth_till] loaded`, which the script prints at the end of its own top level.
+
+## How easy is this to integrate, honestly
+
+It is **not** a one-directory drop-in, and calling it one would be a lie. There
+are three deployment targets — a Python service on the host, a script inside the
+world server, and an optional client addon — and it needs an Ootle recipient, a
+payment component and a persistent ledger. One source directory and one
+installer is achievable and is what this is. One runtime directory is fiction.
+
+What *is* true: **no compilation.** ALE scripts are read at start-up and can be
+reloaded, so nothing here requires rebuilding AzerothCore. That is the whole
+reason this is an ALE script rather than a C++ module in `modules/mod-*`, where
+the convention means "compiled" and installation means CMake and a rebuild.
 
 ## Four things about AzerothCore + ALE that cost an hour each
 
